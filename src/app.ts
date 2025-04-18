@@ -1,11 +1,19 @@
-import express, { NextFunction } from 'express';
+import express from 'express';
 import { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import puppeteer from 'puppeteer';
 import asyncHandler from 'express-async-handler';
-
+import { renderUrlToHtml, RenderUrlToHtmlResult } from './services/htmlRenderService';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
 // Load environment variables
 dotenv.config();
+
+interface ResponseBody<T> {
+  success: boolean;
+  data: T;
+  error?: Error;
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,46 +22,91 @@ app.get('/', (req: Request, res: Response) => {
   res.send('Hello, TypeScript Express!');
 });
 
-// Render the url insite the chromumi.
-// 1. Handle input
-// 1.1 Define API endpoint for URL rendering
+enum ProcessStatus {
+  PROCESSING = 'processing',
+  IDLE = 'idle',
+}
 
+export const screenshotDir = path.join(__dirname, '../screenshots');
+
+let status: ProcessStatus = ProcessStatus.IDLE;
 app.get(
   '/api/render-url',
   asyncHandler(async (req, res) => {
-    const startTime = Date.now();
-    console.log(`Start time: ${startTime}`);
-    // 1. Handle input
-    // 1.1 Set request timeout to 2 minutes
-    req.setTimeout(120000); // 2 minutes in milliseconds
-
-    // 1.2 Access the url from the request parameter named 'url'
+    // 1. Handle input.
+    // 1.1 Access the url from the request parameter
     const url = req.query.url as string;
+    if (!url) {
+      res.send({
+        success: false,
+        error: 'URL is required',
+      });
+      return;
+    }
+    // 1.1.1 Check the url is valid
+    if (!url.startsWith('http')) {
+      res.send({
+        success: false,
+        error: 'URL is invalid',
+      });
+      return;
+    }
 
-    // 2.2 Render the url.
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    // 1.2 Check the status is idle
+    if (status !== ProcessStatus.IDLE) {
+      res.send({
+        success: false,
+        error: 'Process is not idle',
+      });
+      return;
+    }
+    status = ProcessStatus.PROCESSING;
 
-    // 2.2 Take a screenshot of the url
-    const page = await browser.newPage();
-    // 2.2.1 Set page timeout to 1 minute
-    await page.setDefaultTimeout(60000); // 1 minute in milliseconds
-    // 2.2.2 Wait for the page to load
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    // 2. Handle logic
+    // 2.1 Call the service function to render the URL
+    try {
+      const data = await renderUrlToHtml(url);
 
-    // 2.3 Take a screenshot of the page
-    const screenshot = await page.screenshot();
+      // Convert the screenshot path to the public URL
+      const requestUrl = req.hostname;
+      const port = req.socket.localPort;
+      const protocol = req.protocol;
+      const baseUrl = `${protocol}://${requestUrl}:${port === 80 ? '' : port}`;
+      const screenshot = baseUrl + '/' + data.screenshot.replace('./', '');
 
-    // 3. Handle output
-    // 3.1 Return the screenshot as a response
-    res.contentType('image/png').send(screenshot);
-    const endTime = Date.now();
-    console.log(`End time: ${endTime}`);
-    console.log(`Time taken: ${endTime - startTime} milliseconds`);
+      data.screenshot = screenshot;
+      const response: ResponseBody<RenderUrlToHtmlResult> = {
+        success: true,
+        data,
+      };
+      res.send(response);
+    } catch (error) {
+      res.send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      status = ProcessStatus.IDLE;
+    }
   })
 );
+
+// Allow to access the screenshots folder
+app.use('/screenshots', (req, res, next) => {
+  const screenshotPath = path.join(screenshotDir, req.path);
+  if (fs.existsSync(screenshotPath)) {
+    res.sendFile(screenshotPath);
+  } else {
+    next();
+  }
+});
+
+app.get('/api/status', (req, res) => {
+  res.send({
+    success: true,
+    data: { status },
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
