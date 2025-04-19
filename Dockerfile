@@ -1,8 +1,8 @@
 FROM node:22.14.0-bookworm
 
-# ENV http_proxy=http://192.168.0.106:7890
-# ENV https_proxy=http://192.168.0.106:7890
-# ENV no_proxy=localhost,127.0.0.1
+ENV http_proxy=http://192.168.0.106:7897
+ENV https_proxy=http://192.168.0.106:7897
+ENV no_proxy=localhost,127.0.0.1
 
 # 2.1 Install pnpm
 RUN npm install -g pnpm

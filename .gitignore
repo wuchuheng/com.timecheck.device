@@ -3,3 +3,5 @@ dist
 *.tar
 *.tarf.gz
 screenshots/
+*.tar
+*.tar.gz
