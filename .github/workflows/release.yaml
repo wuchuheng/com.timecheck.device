@@ -33,21 +33,16 @@ jobs:
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Wait for build workflow
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Build Application'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
+        
 
-      - name: Wait for package workflow
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Build and Push Docker Image'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
+      - name: Build Docker image
+        run: |
+          make build
+          pushed_image=ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}-arm64
+          docker tag com.timecheck.device:latest-arm64 ${pushed_image}
+          # Push the image to the GitHub Container Registry
+          docker push ${pushed_image}
+
 
       - name: Extract changelog
         id: changelog
