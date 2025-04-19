@@ -18,9 +18,6 @@ env:
 
 # 2. Job Configuration
 jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
-
   # 2.1 Release job definition
   release:
     needs: build
@@ -50,32 +47,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2.3.4 Extract metadata for Docker
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
-
-      # 2.3.5 Build and push Docker image
+      # Build and push Docker image
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # 3. Output/Notification
-      # 3.1 Create release notification
-      - name: Notify release completion
-        if: success()
         run: |
-          echo "Docker image published successfully:"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          make build
+          docker images
+          
+          # Declear the published image name for the remote registry with currrent tag name
+          IMAGE_NAME=ghcr.io/wuchuheng/com.timecheck.device:${{ github.ref_name }}
+          
+          docker tag com.timecheck.device:latest-arm64 ${{ IMAGE_NAME }}
+          docker push ${{ IMAGE_NAME }}
