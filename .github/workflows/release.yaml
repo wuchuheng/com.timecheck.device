@@ -14,7 +14,7 @@ on:
 # 1.2 Define environment variables
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ghcr.io/wuchuheng/com.timecheck.device
 
 # 2. Job Configuration
 jobs:
@@ -53,8 +53,7 @@ jobs:
           make build
           docker images
           
-          # Declear the published image name for the remote registry with currrent tag name
+          # Use environment variable with tag
           IMAGE_NAME=ghcr.io/wuchuheng/com.timecheck.device:${{ github.ref_name }}
-          
           docker tag com.timecheck.device:latest-arm64 ${{ IMAGE_NAME }}
           docker push ${{ IMAGE_NAME }}
