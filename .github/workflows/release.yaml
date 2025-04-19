@@ -20,7 +20,6 @@ env:
 jobs:
   # 2.1 Release job definition
   release:
-    needs: build
     # 2.1.1 Set runner environment
     runs-on: ubuntu-24.04-arm
 
