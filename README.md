@@ -1,4 +1,10 @@
-# URL Renderer
+<h1 align="center"> URL Renderer</h1>
+
+<p align="center">
+  <a href="https://github.com/wuchuheng/com.timecheck.device/actions/workflows/release.yaml">
+    <img src="https://github.com/wuchuheng/com.timecheck.device/actions/workflows/release.yaml/badge.svg" alt="Release Docker Image">
+  </a>
+</p>
 
 A lightweight, high-performance web page rendering service designed for Orange Pi Zero 3 and other ARM64 devices. This Docker-based solution can render web pages and capture screenshots using Playwright with minimal resource requirements.
 
