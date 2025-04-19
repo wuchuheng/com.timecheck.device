@@ -51,8 +51,7 @@ jobs:
         run: |
           make build
           docker images
-          
-          # Use environment variable with tag
           IMAGE_NAME=ghcr.io/wuchuheng/com.timecheck.device:${{ github.ref_name }}
-          docker tag com.timecheck.device:latest-arm64 ${IMAGE_NAME}
+          docker tag  com.timecheck.device:latest-arm64  ${IMAGE_NAME}
+          docker images
           docker push ${IMAGE_NAME}
