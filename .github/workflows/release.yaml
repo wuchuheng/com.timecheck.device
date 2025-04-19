@@ -24,7 +24,60 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Set version
+        id: version
         run: |
-          make build
-          docker images
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for build workflow
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Build Application'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Wait for package workflow
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Build and Push Docker Image'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          # Extract changelog entry for this version if you have CHANGELOG.md
+          # Or generate changelog from git commits
+          CHANGELOG=$(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Changelog
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ## Docker Image
+            ```
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
+            ```
+
+            ### For ARM64 (OrangePi Zero 3)
+            ```
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}-arm64
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
