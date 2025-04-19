@@ -10,11 +10,19 @@ on:
         description: 'Version to release (e.g., v1.0.0)'
         required: true
         type: string
+  # 1.2 Define environment variables
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 
 jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
