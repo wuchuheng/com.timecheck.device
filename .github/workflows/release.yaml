@@ -8,6 +8,8 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - 'v*.*'
+      - 'v*'
   # 1.1.2 Allow manual trigger
   workflow_dispatch:
 
@@ -47,7 +49,7 @@ jobs:
           # password: ${{ secrets.DOCKER_TOKEN }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-       # 2.3.4 Extract metadata for Docker
+        # 2.3.4 Extract metadata for Docker
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v4
