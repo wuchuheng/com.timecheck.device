@@ -8,5 +8,6 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "always"
     }
-  }
+  },
+  "cursor.general.disableHttp2": true
 }
