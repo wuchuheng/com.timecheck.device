@@ -59,6 +59,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{raw}}
+          flavor: |
+            -sha256
 
       # 2.3.5 Build and push Docker image
       - name: Build and push Docker image
