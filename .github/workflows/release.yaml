@@ -58,6 +58,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{raw}}
             type=sha,prefix=sha-
 
       # 2.3.5 Build and push Docker image
