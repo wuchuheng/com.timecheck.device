@@ -55,12 +55,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{raw}}
-          flavor: |
-            -sha256
+          # tags: |
+          #   type=semver,pattern={{version}}
+          #   type=semver,pattern={{major}}.{{minor}}
+          #   type=semver,pattern={{raw}}
 
       # 2.3.5 Build and push Docker image
       - name: Build and push Docker image
