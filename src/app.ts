@@ -161,38 +161,12 @@ app.use('/screenshots', (req, res, next) => {
   }
 });
 
-app.get('/api/status', (req, res) => {
-  res.send({
-    success: true,
-    data: { status },
-  });
-});
-
 app.get('/api/ip', async (req, res) => {
   // 2.1 Get the public IP address with https://ipw.cn/, the response will be like: { success: true, data: { ip: "113.116.96.24" } }
   const publicIpv4 = await fetch('https://4.ipw.cn/').then((res) => res.text());
   res.send({
     success: true,
     data: publicIpv4,
-  });
-});
-
-app.get('/api/ping', async (req, res) => {
-  // 1. Input Processing
-  // 1.1 Set up SSE headers for event streaming
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  // 2.2 Send initial status immediately
-  const cancel = setInterval(() => {
-    res.write(`ping\n\n`);
-  }, 60 * 1000);
-
-  // 2.4 Handle client disconnection
-  req.on('close', () => {
-    clearInterval(cancel);
   });
 });
 

@@ -77,14 +77,17 @@ Renders a web page and returns both the HTML content and a screenshot.
 **Method:** GET
 
 **Parameters:**
+
 - `url` (required): The URL to render
 
 **Example Request:**
+
 ```
 GET /api/render-url?url=https://example.com
 ```
 
 **Example Response:**
+
 ```json
 {
   "success": true,
@@ -93,6 +96,48 @@ GET /api/render-url?url=https://example.com
     "timeTaken": 10.019,
     "screenshot": "http://192.168.0.107:3000/screenshots/screenshot.png"
   }
+}
+```
+
+### Status Monitoring
+
+Provides real-time status updates on the rendering process using Server-Sent Events (SSE).
+
+**Endpoint:** `/api/render-url/status`
+
+**Method:** GET
+
+**Response:** Event stream with status updates
+
+**Status Types:**
+
+- `idle`: The renderer is available and ready to process requests
+- `processing`: The renderer is currently processing a URL rendering request
+
+**Example Response Events:**
+
+```json
+data: {"type":"status","data":"idle","createdAt":"2023/09/15 14:30:22"}
+
+data: {"type":"status","data":"processing","createdAt":"2023/09/15 14:30:25"}
+
+data: {"type":"ping","createdAt":"2023/09/15 14:31:22"}
+```
+
+### Get Public IP
+
+Returns the device's public IP address.
+
+**Endpoint:** `/api/ip`
+
+**Method:** GET
+
+**Example Response:**
+
+```json
+{
+  "success": true,
+  "data": "203.0.113.42"
 }
 ```
 
@@ -116,4 +161,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Playwright](https://playwright.dev/) for web page rendering
 - [Docker](https://www.docker.com/) for containerization
-- Orange Pi community for hardware support 
+- Orange Pi community for hardware support
