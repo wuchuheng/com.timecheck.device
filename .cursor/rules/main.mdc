@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Your rule content
+- Use the pnpm instead of `npm`
