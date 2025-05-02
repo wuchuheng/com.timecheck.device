@@ -2,11 +2,9 @@ import express from 'express';
 import { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import asyncHandler from 'express-async-handler';
-import { renderUrlToHtml, RenderUrlToHtmlResult } from './services/htmlRenderService';
 import path from 'path';
 import fs from 'fs';
-import dayjs from 'dayjs';
-import { renderUrl } from './services/common.service';
+import { renderUrl, statusClientRegister } from './services/common.service';
 // Load environment variables
 dotenv.config();
 
@@ -33,40 +31,6 @@ app.get(
     res.send(resBody);
   })
 );
-
-type StatusType = {
-  // Data type
-  type: 'status' | 'ping';
-  data?: ProcessStatus;
-  createdAt?: string;
-};
-
-let nextResId = 0;
-
-export const statusClientRegister = {
-  idMapRes: {} as Record<number, Response>,
-  register: (res: Response) => {
-    const id = nextResId++;
-    statusClientRegister.idMapRes[id] = res;
-    const cancel = () => delete statusClientRegister.idMapRes[id];
-    return cancel;
-  },
-
-  push: (data: StatusType) => {
-    Object.values(statusClientRegister.idMapRes).forEach((res) => {
-      const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
-      const msg: StatusType = {
-        ...data,
-        createdAt: now,
-      };
-      res.write(`data: ${JSON.stringify(msg)}\n\n`);
-    });
-  },
-};
-
-setInterval(() => {
-  statusClientRegister.push({ type: 'ping' });
-}, 60 * 1000);
 
 app.get(
   '/api/render-url/status',

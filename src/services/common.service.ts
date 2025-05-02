@@ -1,12 +1,21 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
-import { ProcessStatus, statusClientRegister } from '../app';
+import { ProcessStatus } from '../app';
+import dayjs from 'dayjs';
 
 interface ResponseBody<T> {
   success: boolean;
   data?: T;
   error?: string;
 }
+
+/**
+ * Render the url to html
+ * @param url - The url to render
+ * @param req - The request object
+ * @param status - The status of the process
+ * @returns The response body
+ */
 export const renderUrl = async (
   url: string,
   req: Request,
@@ -66,3 +75,35 @@ export const renderUrl = async (
     statusClientRegister.push({ type: 'status', data: status });
   }
 };
+
+type StatusType = {
+  // Data type
+  type: 'status' | 'ping';
+  data?: ProcessStatus;
+  createdAt?: string;
+};
+let nextResId = 0;
+export const statusClientRegister = {
+  idMapRes: {} as Record<number, Response>,
+  register: (res: Response) => {
+    const id = nextResId++;
+    statusClientRegister.idMapRes[id] = res;
+    const cancel = () => delete statusClientRegister.idMapRes[id];
+    return cancel;
+  },
+
+  push: (data: StatusType) => {
+    Object.values(statusClientRegister.idMapRes).forEach((res) => {
+      const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
+      const msg: StatusType = {
+        ...data,
+        createdAt: now,
+      };
+      res.write(`data: ${JSON.stringify(msg)}\n\n`);
+    });
+  },
+};
+
+setInterval(() => {
+  statusClientRegister.push({ type: 'ping' });
+}, 60 * 1000);
