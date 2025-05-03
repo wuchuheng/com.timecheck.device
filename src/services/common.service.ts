@@ -71,10 +71,10 @@ export const renderUrl = async (
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
-  } finally {
-    status = ProcessStatus.IDLE;
-    statusClientRegister.push({ type: 'status', data: status });
   }
+  status = ProcessStatus.IDLE;
+  setStatus(status);
+  statusClientRegister.push({ type: 'status', data: status });
 
   return result;
 };
