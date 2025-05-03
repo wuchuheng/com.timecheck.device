@@ -60,6 +60,7 @@ export interface RenderUrlToHtmlResult {
   screenshot: string;
   html: string;
   timeTaken: number;
+  url: string;
 }
 export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResult> {
   // 2.1.1 Record start time for performance measurement
@@ -104,6 +105,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
       html,
       timeTaken,
       screenshot: savePath,
+      url,
     };
     return result;
   } catch (error) {

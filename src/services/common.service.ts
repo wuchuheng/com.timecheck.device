@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
-import { ProcessStatus } from '../app';
+import { ProcessStatus, pushStatus, setStatus } from '../app';
 import dayjs from 'dayjs';
 
 interface ResponseBody<T> {
@@ -18,7 +18,7 @@ interface ResponseBody<T> {
  */
 export const renderUrl = async (
   url: string,
-  req: Request,
+  baseUrl: string,
   status: ProcessStatus
 ): Promise<ResponseBody<RenderUrlToHtmlResult>> => {
   // 1. Handle input.
@@ -45,18 +45,16 @@ export const renderUrl = async (
     };
   }
   status = ProcessStatus.PROCESSING;
+  setStatus(status);
   statusClientRegister.push({ type: 'status', data: status });
 
   // 2. Handle logic
   // 2.1 Call the service function to render the URL
   try {
     const data = await renderUrlToHtml(url);
+    setStatus(ProcessStatus.IDLE);
 
     // Convert the screenshot path to the public URL
-    const requestUrl = req.hostname;
-    const port = req.socket.localPort;
-    const protocol = req.protocol;
-    const baseUrl = `${protocol}://${requestUrl}:${port === 80 ? '' : port}`;
     const screenshot = baseUrl + '/' + data.screenshot.replace('./', '');
 
     data.screenshot = screenshot;
@@ -76,7 +74,7 @@ export const renderUrl = async (
   }
 };
 
-type StatusType = {
+export type StatusType = {
   // Data type
   type: 'status' | 'ping';
   data?: ProcessStatus;
@@ -93,14 +91,17 @@ export const statusClientRegister = {
   },
 
   push: (data: StatusType) => {
+    const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
+    const msg: StatusType = {
+      ...data,
+      createdAt: now,
+    };
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
-      const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
-      const msg: StatusType = {
-        ...data,
-        createdAt: now,
-      };
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
     });
+
+    // Push the status to the socket
+    pushStatus(msg);
   },
 };
 
