@@ -86,6 +86,7 @@ export type StatusType = {
   createdAt?: string;
 };
 let nextResId = 0;
+
 export const statusClientRegister = {
   idMapRes: {} as Record<number, Response>,
   register: (res: Response) => {
@@ -110,6 +111,32 @@ export const statusClientRegister = {
   },
 };
 
+/**
+ * Ping the client
+ */
+export const pingClientRegister = {
+  nextId: 0,
+  idMapRes: {} as Record<number, Response>,
+  register: (res: Response) => {
+    const id = pingClientRegister.nextId++;
+    pingClientRegister.idMapRes[id] = res;
+    const cancel = () => delete pingClientRegister.idMapRes[id];
+    return cancel;
+  },
+
+  push: () => {
+    // 2.1 Push the ping message to the client via SSE.
+    const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
+    const msg: StatusType = {
+      type: 'ping',
+      createdAt: now,
+    };
+    Object.values(pingClientRegister.idMapRes).forEach((res) => {
+      res.write(`data: ${JSON.stringify(msg)}\n\n`);
+    });
+  },
+};
+
 setInterval(() => {
-  statusClientRegister.push({ type: 'ping' });
-}, 60 * 1000);
+  pingClientRegister.push();
+}, 1000);

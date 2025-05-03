@@ -4,9 +4,15 @@ import dotenv from 'dotenv';
 import asyncHandler from 'express-async-handler';
 import path from 'path';
 import fs from 'fs';
-import { renderUrl, statusClientRegister, StatusType } from './services/common.service';
+import {
+  pingClientRegister,
+  renderUrl,
+  statusClientRegister,
+  StatusType,
+} from './services/common.service';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import dayjs from 'dayjs';
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +52,30 @@ app.get(
     res.send(resBody);
   })
 );
+
+/**
+ * 1.2 Ping the server
+ */
+const pingRoute = '/api/ping';
+app.get(pingRoute, async (req, res) => {
+  // 1. Input Processing
+  // 1.1 Set up SSE headers for event streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // 1.2 Create a client ID for this connection
+
+  // 2.2 Send initial status immediately
+
+  const cancel = pingClientRegister.register(res);
+
+  // 2.4 Handle client disconnection
+  req.on('close', cancel);
+
+  pingClientRegister.push();
+});
 
 // 2. Get the status of the render
 const statusRoute = '/api/render-url/status';

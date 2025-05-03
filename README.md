@@ -120,8 +120,26 @@ Provides real-time status updates on the rendering process using Server-Sent Eve
 data: {"type":"status","data":"idle","createdAt":"2023/09/15 14:30:22"}
 
 data: {"type":"status","data":"processing","createdAt":"2023/09/15 14:30:25"}
+```
 
-data: {"type":"ping","createdAt":"2023/09/15 14:31:22"}
+### ping
+
+Report the ping data every second
+
+**Endpoint:** `/api/ping`
+
+**Method:** GET
+
+**Example Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "type": "ping",
+    "createdAt": "2025/05/03 15:00:00"
+  }
+}
 ```
 
 ### Get Public IP
