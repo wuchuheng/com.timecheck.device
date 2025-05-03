@@ -13,6 +13,7 @@ import {
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import dayjs from 'dayjs';
+import * as logger from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -44,11 +45,15 @@ app.get(
   renderRoute,
   asyncHandler(async (req, res) => {
     const url = req.query.url as string;
+    logger.info('Render request', url);
+    const startTime = Date.now();
     const requestUrl = req.hostname;
     const port = req.socket.localPort;
     const protocol = req.protocol;
     const baseUrl = `${protocol}://${requestUrl}:${port === 80 ? '' : port}`;
     const resBody = await renderUrl(url, baseUrl, status);
+    const takeTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    logger.info(`Finished render(${takeTime} s): `, url);
     res.send(resBody);
   })
 );
@@ -133,6 +138,7 @@ io.on('connection', (socket) => {
   globalSocket = socket;
   socket.on(renderRoute, async (url: string) => {
     // socket protocol
+
     const protocol = socket.handshake.headers.protocol || 'http';
     const baseUrl = `${protocol}://${socket.handshake.headers.host || ''}`;
     const resBody = await renderUrl(url, baseUrl, status);

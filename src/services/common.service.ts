@@ -84,9 +84,11 @@ export type StatusType = {
   type: 'status' | 'ping';
   data?: ProcessStatus;
   createdAt?: string;
+  timeTaken?: string;
 };
 let nextResId = 0;
 
+let latestReportTime: number = Date.now();
 export const statusClientRegister = {
   idMapRes: {} as Record<number, Response>,
   register: (res: Response) => {
@@ -98,16 +100,21 @@ export const statusClientRegister = {
 
   push: (data: StatusType) => {
     const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
+    const nowTime = Date.now();
+    const timeTaken = ((nowTime - latestReportTime) / 1000).toFixed(2);
+
     const msg: StatusType = {
       ...data,
       createdAt: now,
+      timeTaken: `${timeTaken} s`,
     };
+    latestReportTime = nowTime;
+    pushStatus(msg);
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
     });
 
     // Push the status to the socket
-    pushStatus(msg);
   },
 };
 
