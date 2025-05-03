@@ -97,7 +97,7 @@ app.get(ipRoute, async (req, res) => {
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
-let globalSocket: Socket;
+let globalSocket: Socket | undefined;
 io.on('connection', (socket) => {
   // 1.1 Handle the render request
   globalSocket = socket;
@@ -127,7 +127,7 @@ io.on('connection', (socket) => {
 });
 
 export const pushStatus = (msg: StatusType) => {
-  globalSocket.emit(statusRoute, msg);
+  globalSocket?.emit(statusRoute, msg);
 };
 
 httpServer.listen(port, () => {
