@@ -50,21 +50,24 @@ export const renderUrl = async (
 
   // 2. Handle logic
   // 2.1 Call the service function to render the URL
+  let result: ResponseBody<RenderUrlToHtmlResult> = {
+    success: false,
+    error: 'Unknown error',
+  };
+
   try {
     const data = await renderUrlToHtml(url);
-    setStatus(ProcessStatus.IDLE);
 
     // Convert the screenshot path to the public URL
     const screenshot = baseUrl + '/' + data.screenshot.replace('./', '');
 
     data.screenshot = screenshot;
-    const response: ResponseBody<RenderUrlToHtmlResult> = {
+    result = {
       success: true,
       data,
     };
-    return response;
   } catch (error) {
-    return {
+    result = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
@@ -72,6 +75,8 @@ export const renderUrl = async (
     status = ProcessStatus.IDLE;
     statusClientRegister.push({ type: 'status', data: status });
   }
+
+  return result;
 };
 
 export type StatusType = {
