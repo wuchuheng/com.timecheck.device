@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
-import { ProcessStatus, pushStatus, setStatus } from '../app';
+import { getStatus, ProcessStatus, pushStatus, setStatus } from '../app';
 import dayjs from 'dayjs';
 
 interface ResponseBody<T> {
@@ -94,7 +94,10 @@ export const statusClientRegister = {
   register: (res: Response) => {
     const id = nextResId++;
     statusClientRegister.idMapRes[id] = res;
-    const cancel = () => delete statusClientRegister.idMapRes[id];
+    const cancel = () => {
+      const idMapRes = statusClientRegister.idMapRes;
+      delete idMapRes[id];
+    };
     return cancel;
   },
 
@@ -144,6 +147,4 @@ export const pingClientRegister = {
   },
 };
 
-setInterval(() => {
-  pingClientRegister.push();
-}, 1000);
+setInterval(() => statusClientRegister.push({ type: 'status', data: getStatus() }), 1000);

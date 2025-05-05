@@ -36,6 +36,7 @@ let status: ProcessStatus = ProcessStatus.IDLE;
 export const setStatus = (newStatus: ProcessStatus) => {
   status = newStatus;
 };
+export const getStatus = () => status;
 
 /**
  * 1.1 Render the url to html
