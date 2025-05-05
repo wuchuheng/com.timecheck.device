@@ -102,16 +102,16 @@ export const statusClientRegister = {
   },
 
   push: (data: StatusType) => {
-    const now = dayjs().format('YYYY/MM/DD HH:mm:ss');
-    const nowTime = Date.now();
-    const timeTaken = ((nowTime - latestReportTime) / 1000).toFixed(2);
+    const nowTime = new Date();
+    const now = dayjs(nowTime).format('YYYY/MM/DD HH:mm:ss');
+    const timeTaken = ((nowTime.getTime() - latestReportTime) / 1000).toFixed(2);
 
     const msg: StatusType = {
       ...data,
       createdAt: now,
       timeTaken: `${timeTaken} s`,
     };
-    latestReportTime = nowTime;
+    latestReportTime = nowTime.getTime();
     pushStatus(msg);
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
