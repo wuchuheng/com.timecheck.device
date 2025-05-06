@@ -82,7 +82,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
 
     // 2.3 Navigate to the URL and wait for content
     // 2.3.1 Navigate to the specified URL
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 50 * 1000 });
 
     // 2.3.2 Wait for specific content to appear and get HTML
     const html = await getHtmlWhenReady(page);
