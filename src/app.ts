@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction } from 'express';
 import { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import asyncHandler from 'express-async-handler';
@@ -12,8 +12,8 @@ import {
 } from './services/common.service';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import dayjs from 'dayjs';
 import * as logger from './utils/logger';
+import axios from 'axios';
 
 // Load environment variables
 dotenv.config();
@@ -121,14 +121,46 @@ app.use('/screenshots', (req, res, next) => {
 
 // 3. Get the public IP address
 const ipRoute = '/api/ip';
-app.get(ipRoute, async (req, res) => {
-  // 2.1 Get the public IP address with https://ipw.cn/, the response will be like: { success: true, data: { ip: "113.116.96.24" } }
-  const publicIpv4 = await fetch('https://4.ipw.cn/').then((res) => res.text());
-  res.send({
-    success: true,
-    data: publicIpv4,
-  });
-});
+let latestIp: string = '';
+let latestUpdatedAt = Date.now();
+app.get(
+  ipRoute,
+  asyncHandler(async (req, res) => {
+    // 2.1 Get the public IP address with https://ipw.cn/, the response will be like: { success: true, data: { ip: "113.116.96.24" } }
+    logger.info('Get public ip');
+    if (latestUpdatedAt + 60 * 1000 < Date.now() && latestIp !== '') {
+      logger.info('Use cached ip', latestIp);
+      latestUpdatedAt = Date.now();
+      res.send({
+        success: true,
+        data: latestIp,
+      });
+      return;
+    }
+
+    axios
+      .get('https://4.ipw.cn/', {
+        timeout: 60 * 1000,
+      })
+      .then((ipRes) => {
+        const publicIpv4 = ipRes.data;
+        latestIp = publicIpv4;
+        latestUpdatedAt = Date.now();
+        logger.info('Get public ip', publicIpv4);
+        res.send({
+          success: true,
+          data: publicIpv4,
+        });
+      })
+      .catch((error) => {
+        logger.error('Failed to get public ip', error);
+        res.send({
+          success: false,
+          data: 'Failed to get public ip',
+        });
+      });
+  })
+);
 
 const httpServer = createServer(app);
 const io = new Server(httpServer);
@@ -166,6 +198,14 @@ io.on('connection', (socket) => {
 export const pushStatus = (msg: StatusType) => {
   globalSocket?.emit(statusRoute, msg);
 };
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  logger.error('Global error handler', err);
+  res.status(500).send({
+    success: false,
+    data: 'Internal Server Error',
+  });
+});
 
 httpServer.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
