@@ -14,11 +14,13 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import * as logger from './utils/logger';
 import axios from 'axios';
+import compression from 'compression';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+app.use(compression());
 const port = process.env.PORT || 3000;
 
 app.get('/', (req: Request, res: Response) => {

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
 import { getStatus, ProcessStatus, pushStatus, setStatus } from '../app';
 import dayjs from 'dayjs';
+import * as logger from '../utils/logger';
 
 interface ResponseBody<T> {
   success: boolean;
@@ -115,6 +116,10 @@ export const statusClientRegister = {
     pushStatus(msg);
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
+      if (typeof (res as Response & { flush?: () => void }).flush === 'function') {
+        logger.info('Flush the response');
+        (res as Response & { flush?: () => void }).flush!();
+      }
     });
 
     // Push the status to the socket
@@ -141,8 +146,11 @@ export const pingClientRegister = {
       type: 'ping',
       createdAt: now,
     };
-    Object.values(pingClientRegister.idMapRes).forEach((res) => {
+    Object.values(pingClientRegister.idMapRes).forEach((res: Response) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
+      if (typeof (res as Response & { flush?: () => void }).flush === 'function') {
+        (res as Response & { flush?: () => void }).flush!();
+      }
     });
   },
 };
