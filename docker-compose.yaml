@@ -1,0 +1,10 @@
+services:
+  device:
+    image: ghcr.io/wuchuheng/com.timecheck.device:latest
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    container_name: timecheck-device
+    ports:
+      - 3000:3000
+  # docker run -it -e TZ=Asia/Shanghai --name timecheck-device --restart always -p 3000:3000 ghcr.io/wuchuheng/com.timecheck.device:latest
