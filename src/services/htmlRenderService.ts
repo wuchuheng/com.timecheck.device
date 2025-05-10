@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { Browser, Page, chromium } from 'playwright';
+import { Browser, BrowserContext, Page, chromium } from 'playwright';
 
 /**
  * Service for rendering HTML content from URLs using Playwright
@@ -69,6 +69,13 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
   // 2.2 Initialize browser and page
   // 2.2.1 Launch Playwright browser with necessary security settings
   let browser: Browser | null = null;
+  let page: Page | null = null;
+  let context: BrowserContext | null = null;
+  const cleanup = async () => {
+    await page?.close();
+    await context?.close();
+    await browser?.close();
+  };
 
   try {
     browser = await chromium.launch({
@@ -77,8 +84,8 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     });
 
     // 2.2.2 Create browser context and page
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    context = await browser.newContext();
+    page = await context.newPage();
 
     // 2.3 Navigate to the URL and wait for content
     // 2.3.1 Navigate to the specified URL
@@ -107,12 +114,11 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
       screenshot: savePath,
       url,
     };
+    await cleanup();
     return result;
   } catch (error) {
     console.error(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Error rendering ${url}: ${error}`);
+    await cleanup();
     throw error;
-  } finally {
-    // 2.5 Clean up resources
-    await browser?.close();
   }
 }
