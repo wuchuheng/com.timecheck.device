@@ -15,6 +15,7 @@ import { Server, Socket } from 'socket.io';
 import * as logger from './utils/logger';
 import axios from 'axios';
 import compression from 'compression';
+import { cleanupBrowser } from './services/htmlRenderService';
 
 // Load environment variables
 dotenv.config();
@@ -163,6 +164,31 @@ app.get(
       });
   })
 );
+
+// Add browser cleanup endpoint
+app.get(
+  '/api/restart-browser',
+  asyncHandler(async (req, res) => {
+    try {
+      await cleanupBrowser();
+      res.send({ success: true, message: 'Browser restarted successfully' });
+    } catch (error) {
+      res.status(500).send({ success: false, message: 'Failed to restart browser' });
+    }
+  })
+);
+
+// Add health check endpoint
+app.get('/api/health', (req, res) => {
+  const memoryUsage = process.memoryUsage();
+  const memoryUsageMB = Math.round(memoryUsage.rss / 1024 / 1024);
+
+  res.send({
+    status: 'ok',
+    memory: `${memoryUsageMB}MB`,
+    uptime: process.uptime(),
+  });
+});
 
 const httpServer = createServer(app);
 const io = new Server(httpServer);

@@ -117,7 +117,6 @@ export const statusClientRegister = {
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
       if (typeof (res as Response & { flush?: () => void }).flush === 'function') {
-        logger.info('Flush the response');
         (res as Response & { flush?: () => void }).flush!();
       }
     });
