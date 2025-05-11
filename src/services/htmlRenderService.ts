@@ -310,7 +310,6 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     // Calculate performance metrics
     const endTime = Date.now();
     const timeTaken = (endTime - startTime) / 1000;
-    logger.info(`Finished render ${url} in ${timeTaken} seconds`);
 
     // Build result
     const result: RenderUrlToHtmlResult = {
