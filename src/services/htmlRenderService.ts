@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { Browser, Page, chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import * as logger from '../utils/logger';
 
 /**
  * Service for rendering HTML content from URLs using Playwright
@@ -44,12 +45,12 @@ async function createBrowser(): Promise<Browser> {
 export async function getBrowser(): Promise<Browser> {
   if (!browser) {
     browser = await createBrowser();
-    console.log(`Browser launched at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
+    logger.info(`Browser launched at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
 
     // Set a timer to rotate the browser instance periodically to avoid fingerprinting
     setTimeout(
       async () => {
-        console.log(
+        logger.info(
           `Rotating browser instance to avoid fingerprinting at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
         );
         await cleanupBrowser();
@@ -297,7 +298,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     `);
 
     // Load URL with timeout
-    console.log(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rendering: ${url}`);
+    logger.info(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rendering: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 50 * 1000 });
 
     // Get HTML content
@@ -309,7 +310,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     // Calculate performance metrics
     const endTime = Date.now();
     const timeTaken = (endTime - startTime) / 1000;
-    console.log(
+    logger.info(
       `[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Finished render ${url} in ${timeTaken} seconds`
     );
 
@@ -332,7 +333,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
 
     // Randomly restart the browser after some requests (20% chance)
     if (Math.random() < 0.2) {
-      console.log(
+      logger.info(
         `[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rotating browser to prevent fingerprinting`
       );
       await cleanupBrowser();

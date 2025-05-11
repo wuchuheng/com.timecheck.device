@@ -171,7 +171,7 @@ app.get(
     try {
       await cleanupBrowser();
       res.send({ success: true, message: 'Browser restarted successfully' });
-    } catch (error) {
+    } catch () {
       res.status(500).send({ success: false, message: 'Failed to restart browser' });
     }
   })
@@ -207,14 +207,14 @@ io.on('connection', (socket) => {
 
   // 2. Access the public IP address
   socket.on(ipRoute, async () => {
-    console.log('ipRoute');
+    logger.info('ipRoute');
     const publicIpv4 = await fetch('https://4.ipw.cn/').then((res) => res.text());
     socket.emit(ipRoute, publicIpv4);
   });
 
   // 3. Get the status of the render
   socket.on(statusRoute, () => {
-    console.log('statusRoute');
+    logger.info('statusRoute');
     statusClientRegister.push({
       type: 'status',
       data: status,
@@ -235,5 +235,5 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 httpServer.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  logger.info(`Server running at http://localhost:${port}`);
 });
