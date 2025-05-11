@@ -328,7 +328,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     await context.close().catch((e) => logger.error('Error closing context:', e));
 
     // Randomly restart the browser after some requests (20% chance)
-    logger.info(` Rotating browser to prevent fingerprinting`);
+    logger.info(`Rotating browser to prevent fingerprinting`);
     await cleanupBrowser();
   }
 }

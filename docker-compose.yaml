@@ -15,4 +15,4 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  # docker run -it -e TZ=Asia/Shanghai --name timecheck-device --restart always -p 3000:3000 ghcr.io/wuchuheng/com.timecheck.device:latest
+  # docker run --init -it -e TZ=Asia/Shanghai --name timecheck-device --restart always -p 3000:3000 ghcr.io/wuchuheng/com.timecheck.device:latest

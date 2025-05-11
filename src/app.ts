@@ -16,6 +16,7 @@ import * as logger from './utils/logger';
 import axios from 'axios';
 import compression from 'compression';
 import { cleanupBrowser } from './services/htmlRenderService';
+import chalk from 'chalk';
 
 // Load environment variables
 dotenv.config();
@@ -57,7 +58,8 @@ app.get(
     const baseUrl = `${protocol}://${requestUrl}:${port === 80 ? '' : port}`;
     const resBody = await renderUrl(url, baseUrl, status);
     const takeTime = ((Date.now() - startTime) / 1000).toFixed(2);
-    logger.info(`Finished render(${takeTime} s): `, url);
+
+    logger.info(`Finished render(${chalk.green.bold(takeTime)} s): `, url);
     res.send(resBody);
   })
 );
