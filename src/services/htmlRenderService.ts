@@ -19,6 +19,23 @@ async function createBrowser(): Promise<Browser> {
       '--disable-setuid-sandbox',
       '--no-zygote', // Critical for preventing zombies
       '--disable-dev-shm-usage',
+      // Add fingerprinting prevention flags
+      '--disable-blink-features=AutomationControlled',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--disable-canvas-aa',
+      '--disable-2d-canvas-clip-aa',
+      '--disable-web-security',
+      '--disable-webgl',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--disable-notifications',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-breakpad',
+      '--disable-component-extensions-with-background-pages',
+      '--disable-extensions',
+      '--disable-features=TranslateUI',
+      '--disable-ipc-flooding-protection',
     ],
   });
 }
@@ -28,6 +45,17 @@ export async function getBrowser(): Promise<Browser> {
   if (!browser) {
     browser = await createBrowser();
     console.log(`Browser launched at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
+
+    // Set a timer to rotate the browser instance periodically to avoid fingerprinting
+    setTimeout(
+      async () => {
+        console.log(
+          `Rotating browser instance to avoid fingerprinting at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
+        );
+        await cleanupBrowser();
+      },
+      30 * 60 * 1000
+    ); // Rotate every 30 minutes
   }
   return browser;
 }
@@ -60,6 +88,20 @@ process.on('SIGTERM', async () => {
 const screenshotsDir = path.join(process.cwd(), 'screenshots');
 if (!fs.existsSync(screenshotsDir)) {
   fs.mkdirSync(screenshotsDir, { recursive: true });
+}
+
+// Generate a random user agent
+function getRandomUserAgent(): string {
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+  ];
+
+  return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
 // 1. Input Processing
@@ -127,12 +169,85 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
   // Use isolated browser contexts for each request
   const browser = await getBrowser();
   const context = await browser.newContext({
-    userAgent:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    userAgent: getRandomUserAgent(),
+    viewport: {
+      width: 1366 + Math.floor(Math.random() * 100),
+      height: 768 + Math.floor(Math.random() * 100),
+    },
+    screen: {
+      width: 1366 + Math.floor(Math.random() * 100),
+      height: 768 + Math.floor(Math.random() * 100),
+    },
+    deviceScaleFactor: 1 + Math.random() * 0.3,
+    locale: ['en-US', 'en-GB', 'zh-CN'][Math.floor(Math.random() * 3)],
+    timezoneId: ['Asia/Shanghai', 'America/New_York', 'Europe/London'][
+      Math.floor(Math.random() * 3)
+    ],
+    permissions: ['geolocation'],
+    javaScriptEnabled: true,
+    bypassCSP: true,
+    hasTouch: Math.random() > 0.5,
+    // Add additional context options to prevent fingerprinting
+    colorScheme: Math.random() > 0.5 ? 'dark' : 'light',
+    reducedMotion: Math.random() > 0.8 ? 'reduce' : 'no-preference',
+    forcedColors: Math.random() > 0.9 ? 'active' : 'none',
+    acceptDownloads: true,
+    ignoreHTTPSErrors: true,
   });
   const page = await context.newPage();
 
   try {
+    // Randomize navigator properties to avoid fingerprinting
+    await page.addInitScript(() => {
+      // Override properties used for fingerprinting
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+
+      // Add noise to fingerprinting APIs
+      if (Math.random() > 0.5) {
+        // Random hardware concurrency
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          get: () => Math.floor(Math.random() * 8) + 2,
+        });
+      }
+
+      if (Math.random() > 0.5) {
+        // Random platform
+        Object.defineProperty(navigator, 'platform', {
+          get: () => ['Win32', 'MacIntel', 'Linux x86_64'][Math.floor(Math.random() * 3)],
+        });
+      }
+    });
+
+    // Add script to interfere with canvas fingerprinting
+    await page.addInitScript(`
+      (function() {
+        // Add noise to Canvas
+        const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+        HTMLCanvasElement.prototype.toDataURL = function(type) {
+          const dataURL = originalToDataURL.apply(this, arguments);
+          if (Math.random() < 0.1) {
+            // 10% chance to slightly modify the canvas data
+            const canvas = document.createElement('canvas');
+            canvas.width = this.width;
+            canvas.height = this.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(this, 0, 0);
+            
+            // Add a tiny invisible dot at a random position
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.001)';
+            ctx.fillRect(
+              Math.random() * this.width,
+              Math.random() * this.height,
+              1,
+              1
+            );
+            return canvas.toDataURL(type);
+          }
+          return dataURL;
+        };
+      })();
+    `);
+
     // Load URL with timeout
     console.log(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rendering: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 50 * 1000 });
@@ -141,8 +256,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     const html = await getHtmlWhenReady(page);
 
     // Save screenshot with unique name
-    const timestamp = Date.now();
-    const savePath = `screenshots/screenshot-${timestamp}.png`;
+    const savePath = `screenshots/screenshot.png`;
     await page.screenshot({ path: savePath });
 
     // Calculate performance metrics
@@ -169,9 +283,11 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     await page.close().catch((e) => console.error('Error closing page:', e));
     await context.close().catch((e) => console.error('Error closing context:', e));
 
-    // For long-running process health, occasionally restart the browser
-    if (Math.random() < 0.05) {
-      // ~5% chance to refresh browser
+    // Randomly restart the browser after some requests (20% chance)
+    if (Math.random() < 0.2) {
+      console.log(
+        `[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rotating browser to prevent fingerprinting`
+      );
       await cleanupBrowser();
     }
   }

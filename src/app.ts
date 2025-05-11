@@ -130,7 +130,6 @@ app.get(
   ipRoute,
   asyncHandler(async (req, res) => {
     // 2.1 Get the public IP address with https://ipw.cn/, the response will be like: { success: true, data: { ip: "113.116.96.24" } }
-    logger.info('Get public ip');
     if (latestUpdatedAt + 60 * 1000 < Date.now() && latestIp !== '') {
       logger.info('Use cached ip', latestIp);
       latestUpdatedAt = Date.now();
