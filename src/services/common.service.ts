@@ -62,7 +62,7 @@ export const renderUrl = async (
     // Convert the screenshot path to the public URL
     const screenshot = data.screenshot;
 
-    data.screenshot = screenshot;
+    data.screenshot = `/${screenshot}`;
     result = {
       success: true,
       data,
