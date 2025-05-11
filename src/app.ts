@@ -171,7 +171,7 @@ app.get(
     try {
       await cleanupBrowser();
       res.send({ success: true, message: 'Browser restarted successfully' });
-    } catch () {
+    } catch (_) {
       res.status(500).send({ success: false, message: 'Failed to restart browser' });
     }
   })
