@@ -298,7 +298,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     `);
 
     // Load URL with timeout
-    logger.info(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Rendering: ${url}`);
+    logger.info(`Rendering: ${url}`);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 50 * 1000 });
 
     // Get HTML content
@@ -310,9 +310,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     // Calculate performance metrics
     const endTime = Date.now();
     const timeTaken = (endTime - startTime) / 1000;
-    logger.info(
-      `[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Finished render ${url} in ${timeTaken} seconds`
-    );
+    logger.info(`Finished render ${url} in ${timeTaken} seconds`);
 
     // Build result
     const result: RenderUrlToHtmlResult = {
@@ -324,12 +322,12 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
 
     return result;
   } catch (error) {
-    console.error(`[${dayjs().format('YYYY-MM-DD HH:mm:ss')}] Error rendering ${url}:`, error);
+    logger.error(`Error rendering ${url}:`, error);
     throw error;
   } finally {
     // Clean up resources in reverse order to prevent orphaned processes
-    await page.close().catch((e) => console.error('Error closing page:', e));
-    await context.close().catch((e) => console.error('Error closing context:', e));
+    await page.close().catch((e) => logger.error('Error closing page:', e));
+    await context.close().catch((e) => logger.error('Error closing context:', e));
 
     // Randomly restart the browser after some requests (20% chance)
     if (Math.random() < 0.2) {
