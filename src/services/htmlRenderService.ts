@@ -153,6 +153,54 @@ const getHtmlWhenReady = async (page: Page): Promise<string> => {
   return html;
 };
 
+/**
+ * Manages screenshot directories - creates today's directory and cleans up old ones
+ * @returns The path to today's screenshot directory
+ */
+function manageScreenshotDirectories(): string {
+  const getRelatevePath = (date: Date): string => {
+    const dateDir = dayjs(date).format('YYYY-MM-DD');
+    return `screenshots/${dateDir}`;
+  };
+  // Clean up directories older than 1 day to avoid filling up the disk
+  const oneDayAgo = dayjs().subtract(1, 'day');
+  const oneDayAgoDir = path.join(process.cwd(), getRelatevePath(oneDayAgo.toDate()));
+  if (fs.existsSync(oneDayAgoDir)) {
+    fs.rmdirSync(oneDayAgoDir, { recursive: true });
+  }
+
+  // Create a directory for today
+  const relativeDir = getRelatevePath(new Date());
+  const dir = path.join(process.cwd(), relativeDir);
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  return relativeDir;
+}
+
+/**
+ * Get the directory path to save screenshots
+ * @returns the relative path to the screenshot file
+ */
+const saveScreenshot = async (page: Page, url: string): Promise<string> => {
+  // Manage screenshot directories
+  const relativeDir = manageScreenshotDirectories();
+
+  const urlObj = new URL(url);
+  // Get the id from the url query named `id`.
+  const fileName = `${dayjs().format('HH-mm-ss')}-${urlObj.searchParams.get('id')}.png`;
+
+  const relativePath = `${relativeDir}/${fileName}`;
+
+  // Save the page screenshot to the directory
+  await page.screenshot({ path: path.join(process.cwd(), relativePath) });
+
+  // Return the relative path
+  return relativePath;
+};
+
 // 2. Logic Handling
 // 2.1 Define the main function to render HTML from a URL
 export interface RenderUrlToHtmlResult {
@@ -256,8 +304,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     const html = await getHtmlWhenReady(page);
 
     // Save screenshot with unique name
-    const savePath = `screenshots/screenshot.png`;
-    await page.screenshot({ path: savePath });
+    const savePath = await saveScreenshot(page, url);
 
     // Calculate performance metrics
     const endTime = Date.now();
