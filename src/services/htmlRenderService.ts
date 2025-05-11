@@ -44,19 +44,13 @@ async function createBrowser(): Promise<Browser> {
 // Get or create browser
 export async function getBrowser(): Promise<Browser> {
   if (!browser) {
-    browser = await createBrowser();
-    logger.info(`Browser launched at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
-
-    // Set a timer to rotate the browser instance periodically to avoid fingerprinting
-    setTimeout(
-      async () => {
-        logger.info(
-          `Rotating browser instance to avoid fingerprinting at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`
-        );
-        await cleanupBrowser();
-      },
-      30 * 60 * 1000
-    ); // Rotate every 30 minutes
+    try {
+      browser = await createBrowser();
+      logger.info(`Browser launched at ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
+    } catch (err) {
+      logger.error('Failed to launch browser:', err);
+      throw err;
+    }
   }
   return browser;
 }
@@ -65,9 +59,11 @@ export async function getBrowser(): Promise<Browser> {
 export async function cleanupBrowser(): Promise<void> {
   if (browser) {
     try {
+      logger.info('Cleaning up browser...');
       await browser.close();
+      logger.info('Browser closed successfully');
     } catch (e) {
-      console.error('Error closing browser:', e);
+      logger.error('Error closing browser:', e);
     } finally {
       browser = null;
     }
@@ -76,11 +72,13 @@ export async function cleanupBrowser(): Promise<void> {
 
 // Handle process signals
 process.on('SIGINT', async () => {
+  logger.info('SIGINT received, cleaning up browser...');
   await cleanupBrowser();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, cleaning up browser...');
   await cleanupBrowser();
   process.exit(0);
 });
@@ -322,6 +320,7 @@ export async function renderUrlToHtml(url: string): Promise<RenderUrlToHtmlResul
     return result;
   } catch (error) {
     logger.error(`Error rendering ${url}:`, error);
+    await cleanupBrowser();
     throw error;
   } finally {
     // Clean up resources in reverse order to prevent orphaned processes
