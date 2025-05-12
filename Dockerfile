@@ -17,5 +17,8 @@ RUN pnpm install
 # 2.3 Build the application
 RUN pnpm run build
 
-# 2.4 Run the application
-CMD ["node", "dist/app.js"]
+# 2.4 Add pm2.
+RUN pnpm add -g pm2
+
+# 2.5 Run the application
+CMD ["pm2", "start", "dist/app.js", "--name", "timecheck-device"]

@@ -9,10 +9,4 @@ services:
       - 3000:3000
     # Use init system to properly reap zombie processes
     init: true
-    # Add health check to monitor the application
-    healthcheck:
-      test: wget -q --spider http://localhost:3000/api/health || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
   # docker run --init -it -e TZ=Asia/Shanghai --name timecheck-device --restart always -p 3000:3000 ghcr.io/wuchuheng/com.timecheck.device:latest

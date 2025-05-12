@@ -20,3 +20,13 @@ export const error = (...args: unknown[]) => {
   const level = chalk.red.bold('[ERROR]');
   console.log(`${time} ${level}`, ...args);
 };
+
+/**
+ * Log the info message
+ * @param args - The message to log
+ */
+export const warn = (...args: unknown[]) => {
+  const time = dayjs().format('MM/DD HH:mm:ss');
+  const level = chalk.yellow.bold('[WARN]');
+  console.log(`${time} ${level}`, ...args);
+};

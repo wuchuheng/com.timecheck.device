@@ -2,7 +2,6 @@ import { Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
 import { getStatus, ProcessStatus, pushStatus, setStatus } from '../app';
 import dayjs from 'dayjs';
-import * as logger from '../utils/logger';
 
 interface ResponseBody<T> {
   success: boolean;

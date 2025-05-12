@@ -17,6 +17,7 @@ import axios from 'axios';
 import compression from 'compression';
 import { cleanupBrowser } from './services/htmlRenderService';
 import chalk from 'chalk';
+import { exec } from 'child_process';
 
 // Load environment variables
 dotenv.config();
@@ -123,6 +124,24 @@ app.use('/screenshots', (req, res, next) => {
     next();
   }
 });
+
+app.get(
+  '/api/restart-app',
+  asyncHandler(async (req, res) => {
+    logger.warn('Restarting app ...');
+
+    exec('pm2 restart timecheck-device', (error, stdout, stderr) => {
+      if (error) {
+        logger.error('Failed to restart app', error);
+        res.send({ success: false, message: 'Failed to restart app' });
+      } else {
+        logger.info('App restarted successfully');
+        res.send({ success: true, message: 'App restarted successfully' });
+        process.exit(0);
+      }
+    });
+  })
+);
 
 // 3. Get the public IP address
 const ipRoute = '/api/ip';
