@@ -14,11 +14,12 @@ COPY . .
 RUN pnpm install
 # RUN pnpx playwright install --with-deps chromium
 
-# 2.3 Build the application
+# 2.3 Add pm2.
+RUN pnpm add pm2 -g
+
+# 2.4 Build the application
 RUN pnpm run build
 
-# 2.4 Add pm2.
-RUN pnpm add -g pm2
 
 # 2.5 Run the application
 CMD ["pm2", "start", "dist/app.js", "--name", "timecheck-device"]
