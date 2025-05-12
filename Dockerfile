@@ -22,4 +22,4 @@ RUN pnpm run build
 
 
 # 2.5 Run the application
-CMD ["pm2", "start", "dist/app.js", "--name", "timecheck-device"]
+CMD ["pm2-runtime", "start", "dist/app.js", "--name", "timecheck-device"]
