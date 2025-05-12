@@ -129,15 +129,13 @@ app.get(
   '/api/restart-app',
   asyncHandler(async (req, res) => {
     logger.warn('Restarting app ...');
+    res.send({ success: true, message: 'App restarting ...' });
 
     exec('pm2 restart timecheck-device', (error, stdout, stderr) => {
       if (error) {
         logger.error('Failed to restart app', error);
-        res.send({ success: false, message: 'Failed to restart app' });
       } else {
         logger.info('App restarted successfully');
-        res.send({ success: true, message: 'App restarted successfully' });
-        process.exit(0);
       }
     });
   })
