@@ -5,3 +5,4 @@ dist/
 screenshots/
 *.tar
 *.tar.gz
+logs/

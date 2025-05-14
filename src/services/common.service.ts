@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import { renderUrlToHtml, RenderUrlToHtmlResult } from './htmlRenderService';
-import { getStatus, ProcessStatus, pushStatus, setStatus } from '../app';
+import { getStatus, ProcessStatus, setStatus } from '../app';
 import dayjs from 'dayjs';
+import * as logger from '../utils/logger';
 
 interface ResponseBody<T> {
   success: boolean;
@@ -18,32 +19,10 @@ interface ResponseBody<T> {
  */
 export const renderUrl = async (
   url: string,
-  baseUrl: string,
   status: ProcessStatus
 ): Promise<ResponseBody<RenderUrlToHtmlResult>> => {
   // 1. Handle input.
   // 1.1 Access the url from the request parameter
-  if (!url) {
-    return {
-      success: false,
-      error: 'URL is required',
-    };
-  }
-  // 1.1.1 Check the url is valid
-  if (!url.startsWith('http')) {
-    return {
-      success: false,
-      error: 'URL is invalid',
-    };
-  }
-
-  // 1.2 Check the status is idle
-  if (status !== ProcessStatus.IDLE) {
-    return {
-      success: false,
-      error: 'Process is not idle',
-    };
-  }
   status = ProcessStatus.PROCESSING;
   setStatus(status);
   statusClientRegister.push({ type: 'status', data: status });
@@ -67,6 +46,9 @@ export const renderUrl = async (
       data,
     };
   } catch (error) {
+    logger.error(
+      `Error rendering URL ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
     result = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -112,7 +94,6 @@ export const statusClientRegister = {
       timeTaken: `${timeTaken} s`,
     };
     latestReportTime = nowTime.getTime();
-    pushStatus(msg);
     Object.values(statusClientRegister.idMapRes).forEach((res) => {
       res.write(`data: ${JSON.stringify(msg)}\n\n`);
       if (typeof (res as Response & { flush?: () => void }).flush === 'function') {

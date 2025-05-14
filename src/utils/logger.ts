@@ -1,5 +1,38 @@
 import dayjs from 'dayjs';
 import chalk from 'chalk';
+import path from 'path';
+import fs from 'fs';
+
+const getLogDir = (): string => {
+  const logDir = path.join(process.cwd(), 'logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+  return logDir;
+};
+
+const writeLog = (type: 'info' | 'error' | 'warn', message: string) => {
+  let logDir = getLogDir();
+  logDir = path.join(logDir, dayjs().format('YYYY-MM-DD'));
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+
+  const logFile = path.join(logDir, `${type}.log`);
+  const logContent = `${message} \n`;
+  fs.appendFileSync(logFile, logContent);
+};
+
+const typeInColor = (type: 'info' | 'error' | 'warn') => {
+  switch (type) {
+    case 'info':
+      return chalk.green.bold('[INFO]');
+    case 'error':
+      return chalk.red.bold('[ERROR]');
+    case 'warn':
+      return chalk.yellow.bold('[WARN]');
+  }
+};
 
 /**
  * Log the info message
@@ -7,8 +40,8 @@ import chalk from 'chalk';
  */
 export const info = (...args: unknown[]) => {
   const time = dayjs().format('MM/DD HH:mm:ss');
-  const level = chalk.green.bold('[INFO]');
-  console.log(`${time} ${level}`, ...args);
+  console.log(`${time} ${typeInColor('info')}`, ...args);
+  writeLog('info', `${time} [${'info'}] ${args.join(' ')}`);
 };
 
 /**
@@ -17,8 +50,8 @@ export const info = (...args: unknown[]) => {
  */
 export const error = (...args: unknown[]) => {
   const time = dayjs().format('MM/DD HH:mm:ss');
-  const level = chalk.red.bold('[ERROR]');
-  console.log(`${time} ${level}`, ...args);
+  console.log(`${time} ${typeInColor('error')}`, ...args);
+  writeLog('error', `${time} [${'error'}] ${args.join(' ')}`);
 };
 
 /**
@@ -27,6 +60,6 @@ export const error = (...args: unknown[]) => {
  */
 export const warn = (...args: unknown[]) => {
   const time = dayjs().format('MM/DD HH:mm:ss');
-  const level = chalk.yellow.bold('[WARN]');
-  console.log(`${time} ${level}`, ...args);
+  console.log(`${time} ${typeInColor('warn')}`, ...args);
+  writeLog('warn', `${time} [${'warn'}] ${args.join(' ')}`);
 };

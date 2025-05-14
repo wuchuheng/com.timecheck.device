@@ -4,14 +4,8 @@ import dotenv from 'dotenv';
 import asyncHandler from 'express-async-handler';
 import path from 'path';
 import fs from 'fs';
-import {
-  pingClientRegister,
-  renderUrl,
-  statusClientRegister,
-  StatusType,
-} from './services/common.service';
+import { pingClientRegister, renderUrl, statusClientRegister } from './services/common.service';
 import { createServer } from 'http';
-import { Server, Socket } from 'socket.io';
 import * as logger from './utils/logger';
 import axios from 'axios';
 import compression from 'compression';
@@ -47,23 +41,64 @@ export const getStatus = () => status;
  * 1.1 Render the url to html
  */
 const renderRoute = '/api/render-url';
-app.get(
-  renderRoute,
-  asyncHandler(async (req, res) => {
-    const url = req.query.url as string;
-    logger.info('Render request', url);
-    const startTime = Date.now();
-    const requestUrl = req.hostname;
-    const port = req.socket.localPort;
-    const protocol = req.protocol;
-    const baseUrl = `${protocol}://${requestUrl}:${port === 80 ? '' : port}`;
-    const resBody = await renderUrl(url, baseUrl, status);
-    const takeTime = ((Date.now() - startTime) / 1000).toFixed(2);
+app.get(renderRoute, (req, res) => {
+  const url = req.query.url as string;
+  logger.info('Render request', url);
+  if (!url) {
+    res.send({
+      success: false,
+      error: 'URL is required',
+    });
+    logger.error('URL is required', url);
+    return;
+  }
+  // 1.1.1 Check the url is valid
+  if (!url.startsWith('http')) {
+    res.send({
+      success: false,
+      error: 'URL is invalid',
+    });
+    logger.error('URL is invalid', url);
+    return;
+  }
 
-    logger.info(`Finished render(${chalk.green.bold(takeTime)} s): `, url);
-    res.send(resBody);
-  })
-);
+  // 1.2 Check the status is idle
+  if (status !== ProcessStatus.IDLE) {
+    res.send({
+      success: false,
+      error: 'Process is not idle',
+    });
+    logger.error('Process is not idle', status);
+    return;
+  }
+
+  const startTime = Date.now();
+  renderUrl(url, status)
+    .then((resBody) => {
+      const takeTime = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      logger.info(`Finished render(${chalk.green.bold(takeTime)} s): `, url);
+      res.send(resBody);
+
+      // 2.2 If the timeTaken is less than 0.5s, then restart the process
+      if (Number(takeTime) < 0.9) {
+        logger.error(
+          `${url} render time is ${takeTime}s, that is not normal, restart the process ...`
+        );
+        exec('pm2 restart timecheck-device');
+      }
+    })
+    .catch((error) => {
+      logger.error('Failed to render url', error);
+      res.send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    })
+    .finally(() => {
+      setStatus(ProcessStatus.IDLE);
+    });
+});
 
 /**
  * 1.2 Ping the server
@@ -131,7 +166,7 @@ app.get(
     logger.warn('Restarting app ...');
     res.send({ success: true, message: 'App restarting ...' });
 
-    exec('pm2 restart timecheck-device', (error, stdout, stderr) => {
+    exec('pm2 restart timecheck-device', (error) => {
       if (error) {
         logger.error('Failed to restart app', error);
       } else {
@@ -209,41 +244,6 @@ app.get('/api/health', (req, res) => {
 });
 
 const httpServer = createServer(app);
-const io = new Server(httpServer);
-
-let globalSocket: Socket | undefined;
-io.on('connection', (socket) => {
-  // 1.1 Handle the render request
-  globalSocket = socket;
-  socket.on(renderRoute, async (url: string) => {
-    // socket protocol
-
-    const protocol = socket.handshake.headers.protocol || 'http';
-    const baseUrl = `${protocol}://${socket.handshake.headers.host || ''}`;
-    const resBody = await renderUrl(url, baseUrl, status);
-    socket.emit(renderRoute, resBody);
-  });
-
-  // 2. Access the public IP address
-  socket.on(ipRoute, async () => {
-    logger.info('ipRoute');
-    const publicIpv4 = await fetch('https://4.ipw.cn/').then((res) => res.text());
-    socket.emit(ipRoute, publicIpv4);
-  });
-
-  // 3. Get the status of the render
-  socket.on(statusRoute, () => {
-    logger.info('statusRoute');
-    statusClientRegister.push({
-      type: 'status',
-      data: status,
-    });
-  });
-});
-
-export const pushStatus = (msg: StatusType) => {
-  globalSocket?.emit(statusRoute, msg);
-};
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   logger.error('Global error handler', err);
